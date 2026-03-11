@@ -44,9 +44,9 @@
     prevLength = entries.length;
   }
 
-  function handleDelete(date) {
+  async function handleDelete(date) {
     if (confirm(`Delete entry for ${date}?`)) {
-      deleteEntry(date);
+      await deleteEntry(date);
     }
   }
 

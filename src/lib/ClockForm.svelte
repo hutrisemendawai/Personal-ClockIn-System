@@ -35,9 +35,9 @@
     return true;
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!validate()) return;
-    addOrUpdateEntry(date, clockIn, clockOut);
+    await addOrUpdateEntry(date, clockIn, clockOut);
     success = true;
     dispatch('added', { date, clockIn, clockOut });
     setTimeout(() => { success = false; }, 2000);

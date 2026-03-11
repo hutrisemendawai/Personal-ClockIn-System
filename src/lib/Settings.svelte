@@ -7,9 +7,9 @@
 
   $: if (open) value = $clockData.defaultClockOut;
 
-  function save() {
+  async function save() {
     if (value) {
-      setDefaultClockOut(value);
+      await setDefaultClockOut(value);
     }
     open = false;
   }

@@ -1,6 +1,6 @@
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 
-const STORAGE_KEY = 'clockin_system_v1';
+const API_BASE = '/api';
 export const STANDARD_CLOCK_IN = '08:00';
 
 // ── helpers ─────────────────────────────────────────────────────────────────
@@ -49,30 +49,26 @@ export function calculateEntryOvertime(clockIn, clockOut, defaultClockOut) {
   return worked - expected;
 }
 
-// ── persistence ──────────────────────────────────────────────────────────────
-
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (_) {}
-  return { entries: [], defaultClockOut: '17:00' };
-}
-
-function saveData(data) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (_) {}
-}
-
 // ── store ────────────────────────────────────────────────────────────────────
 
-const initial = loadData();
+export const clockData = writable({ entries: [], defaultClockOut: '17:00' });
 
-export const clockData = writable(initial);
+// ── initialization ────────────────────────────────────────────────────────────
 
-// Auto-save on every change
-clockData.subscribe((val) => saveData(val));
+export async function initializeStore() {
+  try {
+    const [entriesRes, settingsRes] = await Promise.all([
+      fetch(`${API_BASE}/entries`),
+      fetch(`${API_BASE}/settings`)
+    ]);
+    if (!entriesRes.ok || !settingsRes.ok) throw new Error('Failed to load data');
+    const entries = await entriesRes.json();
+    const settings = await settingsRes.json();
+    clockData.set({ entries, defaultClockOut: settings.defaultClockOut });
+  } catch (err) {
+    console.error('Failed to initialize store:', err);
+  }
+}
 
 // ── derived ──────────────────────────────────────────────────────────────────
 
@@ -92,26 +88,41 @@ export const currentMonthTotal = derived([clockData, currentMonthEntries], ([$d,
 
 // ── actions ──────────────────────────────────────────────────────────────────
 
-export function addOrUpdateEntry(date, clockIn, clockOut) {
+export async function addOrUpdateEntry(date, clockIn, clockOut) {
+  const res = await fetch(`${API_BASE}/entries`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date, clockIn, clockOut })
+  });
+  if (!res.ok) throw new Error(`Failed to save entry: ${res.statusText}`);
+  const entry = await res.json();
   clockData.update((d) => {
     const idx = d.entries.findIndex((e) => e.date === date);
-    const entry = { id: date, date, clockIn, clockOut };
+    const entries = [...d.entries];
     if (idx >= 0) {
-      d.entries[idx] = entry;
+      entries[idx] = entry;
     } else {
-      d.entries = [...d.entries, entry];
+      entries.push(entry);
     }
-    return { ...d };
+    return { ...d, entries };
   });
 }
 
-export function deleteEntry(date) {
+export async function deleteEntry(date) {
+  const res = await fetch(`${API_BASE}/entries/${date}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Failed to delete entry: ${res.statusText}`);
   clockData.update((d) => ({
     ...d,
     entries: d.entries.filter((e) => e.date !== date)
   }));
 }
 
-export function setDefaultClockOut(time) {
+export async function setDefaultClockOut(time) {
+  const res = await fetch(`${API_BASE}/settings`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ defaultClockOut: time })
+  });
+  if (!res.ok) throw new Error(`Failed to save settings: ${res.statusText}`);
   clockData.update((d) => ({ ...d, defaultClockOut: time }));
 }

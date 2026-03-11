@@ -10,8 +10,10 @@ const PORT = process.env.PORT || 3000;
 
 // ── Database setup ────────────────────────────────────────────────────────────
 
-const dbDir = join(__dirname, 'data');
-if (!existsSync(dbDir)) mkdirSync(dbDir);
+// When running as a packaged Electron app, CLOCKIN_DATA_DIR is set to the
+// OS user-data directory so the database is stored in a writable location.
+const dbDir = process.env.CLOCKIN_DATA_DIR ?? join(__dirname, 'data');
+if (!existsSync(dbDir)) mkdirSync(dbDir, { recursive: true });
 
 const db = new Database(join(dbDir, 'clockin.db'));
 

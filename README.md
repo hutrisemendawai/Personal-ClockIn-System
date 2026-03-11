@@ -9,24 +9,63 @@ A personal time-tracking web app to log clock-in / clock-out times, calculate ov
 - **Overtime / Undertime tracking** — calculated down to the minute based on standard work hours (08:00 – default clock-out)
 - **Monthly accumulation** — totals reset automatically when the month changes
 - **Entries only count when both clock-in and clock-out are filled**
-- **No server required** — open `dist/index.html` directly in any browser
 
-## 🚀 Usage (No Server Required)
+## 🖥️ Desktop App (Recommended)
 
-Simply open `dist/index.html` in your browser:
+Run the app as a native desktop window — no browser required.  Data is persisted in a SQLite database stored in your OS user-data folder.
+
+### Build the installer / executable
+
+```bash
+npm install
+npm run dist
+```
+
+The packaged output lands in the `release/` folder:
+
+| Platform | Output |
+|----------|--------|
+| Windows  | NSIS installer (`.exe`) |
+| macOS    | Disk image (`.dmg`) |
+| Linux    | AppImage (`.AppImage`) |
+
+### Launch without packaging (dev preview)
+
+```bash
+npm install
+npm run electron
+```
+
+This builds the frontend and opens the Electron window in one step.
+
+## 🌐 Web / Server Mode
+
+### No-server (localStorage) mode
+
+Open `dist/index.html` directly in any browser:
 
 ```
 double-click dist/index.html
 ```
 
-That's it! All your data is saved locally in your browser's `localStorage`.
+All data is saved locally in your browser's `localStorage`.
+
+### Server mode (SQLite backend)
+
+```bash
+npm install
+npm run start
+```
+
+Then open `http://localhost:3000` in your browser.
 
 ## 🛠️ Development
 
 ```bash
 npm install
-npm run dev     # hot-reload dev server
-npm run build   # rebuild dist/index.html
+npm run dev     # Vite hot-reload dev server (proxies /api → localhost:3000)
+npm run server  # Start Express/SQLite backend separately
+npm run build   # Rebuild dist/index.html
 ```
 
 ## 📐 Overtime Calculation

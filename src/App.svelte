@@ -5,7 +5,7 @@
   import MonthStats from './lib/MonthStats.svelte';
   import EntryList from './lib/EntryList.svelte';
   import Settings from './lib/Settings.svelte';
-  import { formatMonthLabel, getCurrentMonth } from './lib/store.js';
+  import { formatMonthLabel, getCurrentMonth, initializeStore } from './lib/store.js';
 
   let settingsOpen = false;
   let nowDisplay = '';
@@ -18,9 +18,11 @@
     nowDisplay = `${h}:${m}:${s}`;
   }
 
-  onMount(() => {
+  onMount(async () => {
     tick();
     const interval = setInterval(tick, 1000);
+
+    await initializeStore();
 
     // GSAP entrance timeline
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });

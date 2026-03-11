@@ -11,5 +11,10 @@ export default defineConfig({
     target: 'esnext',
     assetsInlineLimit: 100000000,
     outDir: 'dist'
+  },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3000'
+    }
   }
 });

@@ -1,6 +1,6 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell, dialog } from 'electron';
 import { get as httpGet } from 'http';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -19,7 +19,9 @@ async function startServer() {
   process.env.CLOCKIN_DATA_DIR = app.getPath('userData');
 
   // Dynamically import server.js; it calls app.listen() on load.
-  await import(serverPath);
+  // Convert the absolute path to a file:// URL for ESM compatibility on Windows.
+  const serverUrl = pathToFileURL(serverPath).href;
+  await import(serverUrl);
 }
 
 // ── Wait for the server to accept connections ──────────────────────────────────
@@ -67,9 +69,17 @@ function createWindow() {
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
-  await startServer();
-  await waitForServer('http://localhost:3000');
-  createWindow();
+  try {
+    await startServer();
+    await waitForServer('http://localhost:3000');
+    createWindow();
+  } catch (err) {
+    dialog.showErrorBox(
+      'Startup Error',
+      `Failed to start the server:\n\n${err?.message ?? err}\n\nStack:\n${err?.stack ?? ''}`
+    );
+    app.quit();
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
